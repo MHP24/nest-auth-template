@@ -4,10 +4,10 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { User, Prisma } from '@prisma/client';
-import { Hasher } from '../adapters';
+import { PrismaService } from '../prisma/prisma.service';
 import { SignUpUserDto } from './dto';
+import { Hasher } from '../common/adapters';
 
 @Injectable()
 export class AuthService {
@@ -34,22 +34,18 @@ export class AuthService {
   }
 
   async loginUser(data: SignUpUserDto) {
-    try {
-      const { email, password } = data;
+    const { email, password } = data;
 
-      const user = await this.prisma.user.findUnique({ where: { email } });
-      const isValidPassword = await this.hasher.comparePassword(
-        password,
-        user?.password ?? '',
-      );
-      if (!user || !isValidPassword)
-        throw new BadRequestException('Invalid email or password');
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    const isValidPassword = await this.hasher.comparePassword(
+      password,
+      user?.password ?? '',
+    );
+    if (!user || !isValidPassword)
+      throw new BadRequestException('Invalid email or password');
 
-      return { logged: true };
-      // TODO: add JWT sign
-    } catch (error) {
-      this.handleDatabaseErrors(error);
-    }
+    return { logged: true };
+    // TODO: add JWT sign
   }
 
   handleDatabaseErrors(error: any) {
