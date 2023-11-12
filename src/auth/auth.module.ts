@@ -21,5 +21,6 @@ import { PassportModule } from '@nestjs/passport';
       signOptions: { expiresIn: '12h' },
     }),
   ],
+  exports: [PassportModule],
 })
 export class AuthModule {}
