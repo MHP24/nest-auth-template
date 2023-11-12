@@ -7,4 +7,5 @@ export const appConfig = () => ({
     password: process.env.DB_PASSWORD,
     url: process.env.DB_URL,
   },
+  jwtSecret: process.env.JWT_SECRET,
 });
