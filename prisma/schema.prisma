@@ -8,9 +8,16 @@ datasource db {
 }
 
 model User {
-  id String @id @default(uuid())
-  email String @unique
-  password String
-  roles String[] @default(["user"])
-  isActive Boolean @default(true)
+  id          String  @id @default(uuid()) @map("id")
+  email       String  @unique @map("email")
+  password    String  @map("password")
+  accessToken String? @map("access_token")
+
+  roles    String[] @default(["user"]) @map("roles")
+  isActive Boolean  @default(true) @map("is_active")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  lastAccess DateTime @updatedAt @map("last_access")
+
+  @@map("users")
 }

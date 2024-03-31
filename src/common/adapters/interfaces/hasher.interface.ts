@@ -1,4 +1,4 @@
 export interface HasherAdapter {
-  hashPassword(password: string): Promise<string>;
-  comparePassword(password: string, hash: string): Promise<boolean>;
+  hash(password: string): Promise<string>;
+  compareHash(password: string, hash: string): Promise<boolean>;
 }
