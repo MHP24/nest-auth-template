@@ -32,9 +32,7 @@ export class AuthService {
           ...rest,
         },
       });
-      const token = this.signToken(user.id);
-      // * Store token on db
-      await this.applyToken(user.id, token);
+      const token = await this.handleToken(user.id);
 
       return {
         user: {
@@ -57,8 +55,7 @@ export class AuthService {
     const { email, password } = data;
     const user = await this.validateUser(email, password);
 
-    const token = this.signToken(user.id);
-    await this.applyToken(user.id, token);
+    const token = await this.handleToken(user.id);
 
     return {
       user: {
@@ -70,6 +67,7 @@ export class AuthService {
     };
   }
 
+  // * Valiadate user credentials vs db
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { email },
@@ -85,9 +83,18 @@ export class AuthService {
     return user;
   }
 
-  /* */
+  // * Sign token using JWT Strategy
   signToken(id: string) {
-    return this.jwtService.sign({ id });
+    return {
+      accessToken: this.jwtService.sign({ id }),
+      refreshToken: this.jwtService.sign(
+        { id },
+        {
+          expiresIn: '7d',
+          secret: process.env.JWT_REFRESH_SECRET,
+        },
+      ),
+    };
   }
 
   // * This method stores current token on db
@@ -101,6 +108,30 @@ export class AuthService {
     });
   }
 
+  // * Handler for creation and saving
+  async handleToken(userId: string) {
+    const token = this.signToken(userId);
+    await this.applyToken(userId, token.accessToken);
+    return token;
+  }
+
+  async refreshToken(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        roles: true,
+      },
+    });
+
+    return {
+      user,
+      token: await this.handleToken(user.id),
+    };
+  }
+
+  // * Handler for service
   handleDatabaseErrors(error: any) {
     const badRequestCodes = {
       P2002: 'This email already exists',
