@@ -1,15 +1,15 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { User, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignUpUserDto } from './dto';
 import { Hasher } from '../common/adapters';
-import { JwtService } from '@nestjs/jwt';
+import { envs } from 'src/common/config';
 
 @Injectable()
 export class AuthService {
@@ -21,42 +21,58 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  /* Register user and return JWT (auto sign in on register) */
+  // * Register user and return JWT (auto sign in on register)
   async createUser(data: Prisma.UserCreateInput) {
     try {
       const { password, ...rest } = data;
+      // * User creation
       const user = await this.prisma.user.create({
         data: {
-          password: await this.hasher.hashPassword(password),
+          password: await this.hasher.hash(password),
           ...rest,
         },
       });
+      const token = await this.handleToken(user.id);
 
       return {
-        user,
-        token: this.signToken(user.id),
+        user: {
+          id: user.id,
+          email: user.email,
+          roles: user.roles,
+        },
+        token,
       };
     } catch (error) {
       this.handleDatabaseErrors(error);
     }
   }
 
-  /*  
-    Makes validation using validateUser and 
-    if the user is valid generates JWT
-  */
+  /*
+   * Makes validation using validateUser and
+   * if the user is valid generates JWT
+   */
   async loginUser(data: SignUpUserDto) {
     const { email, password } = data;
     const user = await this.validateUser(email, password);
+
+    const token = await this.handleToken(user.id);
+
     return {
-      user,
-      token: this.signToken(user.id),
+      user: {
+        id: user.id,
+        email: user.email,
+        roles: user.roles,
+      },
+      token,
     };
   }
 
+  // * Valiadate user credentials vs db
   async validateUser(email: string, password: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    const isValidPassword = await this.hasher.comparePassword(
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+    const isValidPassword = await this.hasher.compareHash(
       password,
       user?.password ?? '',
     );
@@ -67,11 +83,58 @@ export class AuthService {
     return user;
   }
 
-  /* */
+  // * Sign token using JWT Strategy
   signToken(id: string) {
-    return this.jwtService.sign({ id });
+    return {
+      accessToken: this.jwtService.sign({ id }),
+      refreshToken: this.jwtService.sign(
+        { id },
+        {
+          expiresIn: envs.jwtRefreshExpireText,
+          secret: envs.jwtRefreshSecret,
+        },
+      ),
+      expiresIn: new Date().setTime(
+        new Date().getTime() + envs.jwtExpireSeconds * 1000,
+      ),
+    };
   }
 
+  // * This method stores current token on db
+  async applyToken(userId: string, token: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        // * Token must be saved hashed
+        accessToken: await this.hasher.hash(token),
+      },
+    });
+  }
+
+  // * Handler for creation and saving
+  async handleToken(userId: string) {
+    const token = this.signToken(userId);
+    await this.applyToken(userId, token.accessToken);
+    return token;
+  }
+
+  async refreshToken(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        roles: true,
+      },
+    });
+
+    return {
+      user,
+      token: await this.handleToken(user.id),
+    };
+  }
+
+  // * Handler for service
   handleDatabaseErrors(error: any) {
     const badRequestCodes = {
       P2002: 'This email already exists',
@@ -81,6 +144,6 @@ export class AuthService {
     if (requestError) throw new BadRequestException(requestError);
 
     this.logger.error(error);
-    throw new InternalServerErrorException('Internal server error');
+    throw new BadRequestException();
   }
 }

@@ -4,11 +4,11 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class Hasher implements HasherAdapter {
-  async hashPassword(password: string): Promise<string> {
-    return await bcrypt.hash(password, 10);
+  async hash(target: string): Promise<string> {
+    return await bcrypt.hash(target, 10);
   }
 
-  async comparePassword(password: string, hash: string): Promise<boolean> {
-    return await bcrypt.compare(password, hash);
+  async compareHash(target: string, hash: string): Promise<boolean> {
+    return await bcrypt.compare(target, hash);
   }
 }
