@@ -12,6 +12,9 @@ interface EnvVars {
   DB_URL: string;
   JWT_SECRET: string;
   JWT_REFRESH_SECRET: string;
+  JWT_EXPIRE_TEXT: string;
+  JWT_REFRESH_EXPIRE_TEXT: string;
+  JWT_EXPIRE_SECONDS: number;
 }
 
 const envSchema = joi
@@ -25,6 +28,9 @@ const envSchema = joi
     DB_URL: joi.string().required(),
     JWT_SECRET: joi.string().required(),
     JWT_REFRESH_SECRET: joi.string().required(),
+    JWT_EXPIRE_TEXT: joi.string().required(),
+    JWT_REFRESH_EXPIRE_TEXT: joi.string().required(),
+    JWT_EXPIRE_SECONDS: joi.number().required(),
   })
   .unknown(true);
 
@@ -37,12 +43,15 @@ const envVars: EnvVars = value;
 
 export const envs = {
   port: envVars.PORT,
-  dbName: process.env.DB_NAME,
-  dbHost: process.env.DB_HOST,
-  dbPort: process.env.DB_PORT,
-  dbUser: process.env.DB_USER,
-  dbPassword: process.env.DB_PASSWORD,
-  dbUrl: process.env.DB_URL,
-  jwtSecret: process.env.JWT_SECRET,
-  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET,
+  dbName: envVars.DB_NAME,
+  dbHost: envVars.DB_HOST,
+  dbPort: envVars.DB_PORT,
+  dbUser: envVars.DB_USER,
+  dbPassword: envVars.DB_PASSWORD,
+  dbUrl: envVars.DB_URL,
+  jwtSecret: envVars.JWT_SECRET,
+  jwtRefreshSecret: envVars.JWT_REFRESH_SECRET,
+  jwtExpireText: envVars.JWT_EXPIRE_TEXT,
+  jwtRefreshExpireText: envVars.JWT_REFRESH_EXPIRE_TEXT,
+  jwtExpireSeconds: envVars.JWT_EXPIRE_SECONDS,
 };

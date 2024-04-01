@@ -86,16 +86,17 @@ export class AuthService {
   // * Sign token using JWT Strategy
   signToken(id: string) {
     return {
-      // TODO: add expires in: date based on expiration accessToken
       accessToken: this.jwtService.sign({ id }),
       refreshToken: this.jwtService.sign(
         { id },
         {
-          expiresIn: '7d',
+          expiresIn: envs.jwtRefreshExpireText,
           secret: envs.jwtRefreshSecret,
         },
       ),
-      expiresIn: new Date().setTime(new Date().getTime() + 10 * 1000),
+      expiresIn: new Date().setTime(
+        new Date().getTime() + envs.jwtExpireSeconds * 1000,
+      ),
     };
   }
 

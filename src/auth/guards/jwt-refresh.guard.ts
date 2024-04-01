@@ -27,7 +27,7 @@ export class JwtRefreshGuard implements CanActivate {
 
       return true;
     } catch (error) {
-      throw new ForbiddenException('Invalid token');
+      throw new ForbiddenException('Invalid access token');
     }
   }
 }

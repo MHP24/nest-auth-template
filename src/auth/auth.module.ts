@@ -19,7 +19,7 @@ import { envs } from 'src/common/config';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: envs.jwtSecret,
-      signOptions: { expiresIn: '10s' },
+      signOptions: { expiresIn: envs.jwtExpireText },
     }),
   ],
   exports: [PassportModule],
