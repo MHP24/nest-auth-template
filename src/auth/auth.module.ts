@@ -7,6 +7,7 @@ import { CommonModule } from '../common/common.module';
 import { ConfigModule } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
+import { envs } from 'src/common/config';
 
 @Module({
   controllers: [AuthController],
@@ -17,7 +18,7 @@ import { PassportModule } from '@nestjs/passport';
     CommonModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET,
+      secret: envs.jwtSecret,
       signOptions: { expiresIn: '10s' },
     }),
   ],

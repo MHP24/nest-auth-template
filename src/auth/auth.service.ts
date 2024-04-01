@@ -1,15 +1,15 @@
 import {
   BadRequestException,
   Injectable,
-  InternalServerErrorException,
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { User, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignUpUserDto } from './dto';
 import { Hasher } from '../common/adapters';
-import { JwtService } from '@nestjs/jwt';
+import { envs } from 'src/common/config';
 
 @Injectable()
 export class AuthService {
@@ -86,14 +86,16 @@ export class AuthService {
   // * Sign token using JWT Strategy
   signToken(id: string) {
     return {
+      // TODO: add expires in: date based on expiration accessToken
       accessToken: this.jwtService.sign({ id }),
       refreshToken: this.jwtService.sign(
         { id },
         {
           expiresIn: '7d',
-          secret: process.env.JWT_REFRESH_SECRET,
+          secret: envs.jwtRefreshSecret,
         },
       ),
+      expiresIn: new Date().setTime(new Date().getTime() + 10 * 1000),
     };
   }
 
@@ -141,6 +143,6 @@ export class AuthService {
     if (requestError) throw new BadRequestException(requestError);
 
     this.logger.error(error);
-    throw new InternalServerErrorException('Internal server error');
+    throw new BadRequestException();
   }
 }
