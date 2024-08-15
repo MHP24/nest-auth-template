@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Observable } from 'rxjs';
-import { envs } from 'src/common/config';
+import { envs } from '../../common/config';
 
 @Injectable()
 export class JwtRefreshGuard implements CanActivate {
@@ -21,7 +21,7 @@ export class JwtRefreshGuard implements CanActivate {
       if (!token) return false;
 
       const verification = this.jwtService.verify(token, {
-        secret: envs.jwtRefreshSecret,
+        secret: envs.jwt.refreshSecret,
       });
       request.userId = verification.id;
 

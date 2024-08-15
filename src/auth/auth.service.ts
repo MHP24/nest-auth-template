@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   UnauthorizedException,
@@ -9,7 +10,7 @@ import { User, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignUpUserDto } from './dto';
 import { Hasher } from '../common/adapters';
-import { envs } from 'src/common/config';
+import { envs } from '../common/config';
 
 @Injectable()
 export class AuthService {
@@ -90,12 +91,12 @@ export class AuthService {
       refreshToken: this.jwtService.sign(
         { id },
         {
-          expiresIn: envs.jwtRefreshExpireText,
-          secret: envs.jwtRefreshSecret,
+          expiresIn: envs.jwt.refreshExpireText,
+          secret: envs.jwt.refreshSecret,
         },
       ),
       expiresIn: new Date().setTime(
-        new Date().getTime() + envs.jwtExpireSeconds * 1000,
+        new Date().getTime() + envs.jwt.expireSeconds * 1000,
       ),
     };
   }
@@ -105,7 +106,7 @@ export class AuthService {
     await this.prisma.user.update({
       where: { id: userId },
       data: {
-        // * Token must be saved hashed
+        // ! Token must be saved hashed
         accessToken: await this.hasher.hash(token),
       },
     });
@@ -133,6 +134,23 @@ export class AuthService {
       token: await this.handleToken(user.id),
     };
   }
+
+  async oAuthLogin(user) {
+    if (!user) {
+      throw new ForbiddenException('User not available');
+    }
+
+    // TODO: Add and replace this business logic
+    const payload = {
+      email: user.email,
+      name: user.name,
+    };
+
+    const jwt = this.jwtService.sign(payload);
+
+    return { jwt };
+  }
+
 
   // * Handler for service
   handleDatabaseErrors(error: any) {
