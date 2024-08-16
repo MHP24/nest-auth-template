@@ -1,15 +1,14 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
-
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInUserDto, SignUpUserDto } from './dto';
 import { AuthRefresh, GetUserId } from './decorators';
-import { Response } from 'express';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // * Local auth
   @Post('sign_up')
   register(@Body() signUpUserDto: SignUpUserDto) {
     return this.authService.createUser(signUpUserDto);
@@ -26,11 +25,10 @@ export class AuthController {
     return this.authService.refreshToken(userId);
   }
 
+  // * oAuth Implementations
   @Get('callback/google')
   @UseGuards(GoogleOauthGuard)
-  async googleAuthCallback(@Req() req, @Res() res: Response) {
-    const token = await this.authService.oAuthLogin(req.user);
-    console.log({ token });
-    res.status(200).json({ token })
+  googleAuthCallback(@Req() req) {
+    return this.authService.oAuthLogin(req.user);
   }
 }
